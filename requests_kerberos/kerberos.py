@@ -1,3 +1,6 @@
+from __future__ import absolute_import
+
+from requests import Session
 from requests.auth import AuthBase
 from requests.compat import urlparse
 import kerberos
@@ -64,8 +67,7 @@ class HTTPKerberosAuth(AuthBase):
         log.debug("authenticate_user(): Authorization header: {0}".format(
             auth_header))
         response.request.headers['Authorization'] = auth_header
-        response.request.send(anyway=True)
-        _r = response.request.response
+        _r = response.connection.send(response.request, **response.send_kwargs)
         _r.history.append(response)
         log.debug("authenticate_user(): returning {0}".format(_r))
         return _r
@@ -112,9 +114,8 @@ class HTTPKerberosAuth(AuthBase):
                                             _negotiate_value(response))
         if  result < 1:
             raise Exception("authGSSClientStep failed")
-        _r = response.request.response
-        log.debug("authenticate_server(): returning {0}".format(_r))
-        return _r
+        log.debug("authenticate_server(): returning {0}".format(response))
+        return response
 
     def handle_response(self, response):
         """Takes the given response and tries kerberos-auth, as needed."""
